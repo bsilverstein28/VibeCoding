@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { ShareSearchDialog } from "@/components/share-search-dialog"
 import { useToast } from "@/hooks/use-toast"
 import type { SavedSearch } from "@/components/home-comparison"
 
@@ -74,15 +75,22 @@ export function SavedSearches({ savedSearches, onLoad, onDelete }: SavedSearches
             <DropdownMenuItem key={search.id} onClick={() => handleLoad(search.id, search.name)}>
               <div className="flex w-full items-center justify-between">
                 <span className="truncate mr-2">{search.name}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 text-slate-400 hover:text-red-500"
-                  onClick={(e) => handleDelete(search.id, search.name, e)}
-                >
-                  <Trash2 className="h-3 w-3" />
-                  <span className="sr-only">Delete</span>
-                </Button>
+                <div className="flex items-center">
+                  <ShareSearchDialog
+                    search={search}
+                    buttonSize="sm"
+                    className="h-6 w-6 text-slate-400 hover:text-blue-500"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-slate-400 hover:text-red-500"
+                    onClick={(e) => handleDelete(search.id, search.name, e)}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    <span className="sr-only">Delete</span>
+                  </Button>
+                </div>
               </div>
             </DropdownMenuItem>
           ))}
@@ -121,20 +129,23 @@ export function SavedSearches({ savedSearches, onLoad, onDelete }: SavedSearches
                       </span>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-slate-400 hover:text-red-500"
-                    onClick={(e) => {
-                      handleDelete(search.id, search.name, e)
-                      if (savedSearches.length <= 1) {
-                        setIsDialogOpen(false)
-                      }
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span className="sr-only">Delete</span>
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <ShareSearchDialog search={search} />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-slate-400 hover:text-red-500"
+                      onClick={(e) => {
+                        handleDelete(search.id, search.name, e)
+                        if (savedSearches.length <= 1) {
+                          setIsDialogOpen(false)
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Delete</span>
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>

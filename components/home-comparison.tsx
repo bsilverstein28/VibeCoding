@@ -14,6 +14,7 @@ import { PropertyCard } from "@/components/property-card"
 import { SaveSearchDialog } from "@/components/save-search-dialog"
 import { SavedSearches } from "@/components/saved-searches"
 import { SortSelect, type SortOption } from "@/components/sort-select"
+import { ImportSearchDialog } from "@/components/import-search-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { generateId } from "@/utils/id-generator"
 import { extractSourceFromUrl, extractAddressFromUrl } from "@/utils/url-helpers"
@@ -91,6 +92,56 @@ export function HomeComparison() {
     yearBuilt: 0,
     source: "",
   })
+
+  // Check for shared search in URL on initial load
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search)
+      const sharedSearch = urlParams.get("shared")
+
+      if (sharedSearch) {
+        try {
+          // Try to decode and parse the shared search
+          const decodedData = JSON.parse(atob(decodeURIComponent(sharedSearch)))
+
+          if (decodedData && decodedData.type === "listiq-shared-search" && decodedData.data) {
+            const search = decodedData.data as SavedSearch
+
+            // Generate a new ID for the imported search
+            const importedSearch: SavedSearch = {
+              ...search,
+              id: generateId(),
+              name: `${search.name} (Shared)`,
+              savedAt: new Date().toISOString(),
+            }
+
+            // Add to saved searches
+            setSavedSearches((prev) => [importedSearch, ...prev])
+
+            // Load the properties
+            setProperties(importedSearch.properties)
+
+            // Show notification
+            toast({
+              title: "Shared search loaded",
+              description: `"${importedSearch.name}" with ${importedSearch.properties.length} properties has been loaded.`,
+            })
+
+            // Remove the shared parameter from URL to prevent reloading on refresh
+            const newUrl = window.location.pathname
+            window.history.replaceState({}, document.title, newUrl)
+          }
+        } catch (error) {
+          console.error("Error loading shared search:", error)
+          toast({
+            title: "Error loading shared search",
+            description: "The shared search data could not be loaded. It may be invalid or corrupted.",
+            variant: "destructive",
+          })
+        }
+      }
+    }
+  }, [toast])
 
   // Load favorites and saved searches from localStorage on component mount
   useEffect(() => {
@@ -283,6 +334,10 @@ export function HomeComparison() {
     setSavedSearches(savedSearches.filter((search) => search.id !== searchId))
   }
 
+  const importSearch = (search: SavedSearch) => {
+    setSavedSearches([search, ...savedSearches])
+  }
+
   const getBestValue = () => {
     if (properties.length === 0) return null
 
@@ -472,6 +527,7 @@ export function HomeComparison() {
             </div>
           )}
           <SaveSearchDialog properties={properties} onSave={saveSearch} />
+          <ImportSearchDialog onImport={importSearch} />
           <SavedSearches savedSearches={savedSearches} onLoad={loadSearch} onDelete={deleteSearch} />
         </div>
       </div>
