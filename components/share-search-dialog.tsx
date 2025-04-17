@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useRef, useEffect } from "react"
 import { Share2, Copy, Check, Download } from "lucide-react"
 
@@ -22,6 +24,7 @@ interface ShareSearchDialogProps {
   buttonVariant?: "default" | "outline" | "ghost" | "link"
   buttonSize?: "default" | "sm" | "lg" | "icon"
   className?: string
+  onClick?: (e: React.MouseEvent) => void
 }
 
 export function ShareSearchDialog({
@@ -29,6 +32,7 @@ export function ShareSearchDialog({
   buttonVariant = "ghost",
   buttonSize = "icon",
   className,
+  onClick,
 }: ShareSearchDialogProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
@@ -56,7 +60,12 @@ export function ShareSearchDialog({
     }
   }, [isOpen])
 
-  const handleCopy = () => {
+  const handleCopy = (e?: React.MouseEvent) => {
+    // Prevent event propagation if an event is provided
+    if (e) {
+      e.stopPropagation()
+    }
+
     if (inputRef.current) {
       inputRef.current.select()
       navigator.clipboard.writeText(shareableUrl)
@@ -99,7 +108,7 @@ export function ShareSearchDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant={buttonVariant} size={buttonSize} className={className}>
+        <Button variant={buttonVariant} size={buttonSize} className={className} onClick={onClick}>
           <Share2 className="h-4 w-4" />
           <span className="sr-only">Share search</span>
         </Button>
@@ -118,7 +127,7 @@ export function ShareSearchDialog({
             <p className="text-sm font-medium">Shareable link</p>
             <div className="flex items-center space-x-2">
               <Input ref={inputRef} value={shareableUrl} readOnly className="font-mono text-xs" />
-              <Button variant="outline" size="icon" onClick={handleCopy} className="flex-shrink-0">
+              <Button variant="outline" size="icon" onClick={(e) => handleCopy(e)} className="flex-shrink-0">
                 {isCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>

@@ -80,6 +80,7 @@ export function SavedSearches({ savedSearches, onLoad, onDelete }: SavedSearches
                     search={search}
                     buttonSize="sm"
                     className="h-6 w-6 text-slate-400 hover:text-blue-500"
+                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
                   />
                   <Button
                     variant="ghost"
@@ -130,7 +131,7 @@ export function SavedSearches({ savedSearches, onLoad, onDelete }: SavedSearches
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
-                    <ShareSearchDialog search={search} />
+                    <ShareSearchDialog search={search} onClick={(e: React.MouseEvent) => e.stopPropagation()} />
                     <Button
                       variant="ghost"
                       size="icon"
