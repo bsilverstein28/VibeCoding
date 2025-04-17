@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect, useMemo } from "react"
-import { Plus, Heart } from "lucide-react"
+import { Plus, Heart, Trash2, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,6 +15,7 @@ import { SaveSearchDialog } from "@/components/save-search-dialog"
 import { SavedSearches } from "@/components/saved-searches"
 import { SortSelect, type SortOption } from "@/components/sort-select"
 import { ImportSearchDialog } from "@/components/import-search-dialog"
+import { MortgageSettings, type MortgageSettings as MortgageSettingsType } from "@/components/mortgage-settings"
 import { useToast } from "@/hooks/use-toast"
 import { generateId } from "@/utils/id-generator"
 import { extractSourceFromUrl, extractAddressFromUrl } from "@/utils/url-helpers"
@@ -54,6 +55,8 @@ export type SortField =
   | "taxes-desc"
   | "yearBuilt-asc"
   | "yearBuilt-desc"
+  | "monthlyPayment-asc"
+  | "monthlyPayment-desc"
 
 const sortOptions: SortOption[] = [
   { value: "price-asc", label: "Price: Low to High" },
@@ -70,7 +73,16 @@ const sortOptions: SortOption[] = [
   { value: "taxes-desc", label: "Taxes: High to Low" },
   { value: "yearBuilt-asc", label: "Year Built: Oldest First" },
   { value: "yearBuilt-desc", label: "Year Built: Newest First" },
+  { value: "monthlyPayment-asc", label: "Monthly Payment: Low to High" },
+  { value: "monthlyPayment-desc", label: "Monthly Payment: High to Low" },
 ]
+
+const DEFAULT_MORTGAGE_SETTINGS: MortgageSettingsType = {
+  enabled: false,
+  interestRate: 6.5,
+  downPaymentPercentage: 20,
+  loanTermYears: 30,
+}
 
 export function HomeComparison() {
   const [properties, setProperties] = useState<Property[]>([])
@@ -78,6 +90,9 @@ export function HomeComparison() {
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([])
   const [activeTab, setActiveTab] = useState<string>("cards")
   const [sortBy, setSortBy] = useState<SortField>("price-asc")
+  const [selectedPropertyIds, setSelectedPropertyIds] = useState<Set<string>>(new Set())
+  const [isSelectionMode, setIsSelectionMode] = useState(false)
+  const [mortgageSettings, setMortgageSettings] = useState<MortgageSettingsType>(DEFAULT_MORTGAGE_SETTINGS)
   const { toast } = useToast()
 
   const [currentProperty, setCurrentProperty] = useState<Partial<Property>>({
@@ -143,7 +158,7 @@ export function HomeComparison() {
     }
   }, [toast])
 
-  // Load favorites and saved searches from localStorage on component mount
+  // Load favorites, saved searches, and settings from localStorage on component mount
   useEffect(() => {
     try {
       const savedFavorites = localStorage.getItem("listiq-favorites")
@@ -160,6 +175,12 @@ export function HomeComparison() {
       const savedSort = localStorage.getItem("listiq-sort-preference")
       if (savedSort) {
         setSortBy(savedSort as SortField)
+      }
+
+      // Load saved mortgage settings
+      const savedMortgageSettings = localStorage.getItem("listiq-mortgage-settings")
+      if (savedMortgageSettings) {
+        setMortgageSettings(JSON.parse(savedMortgageSettings))
       }
     } catch (error) {
       console.error("Error loading data from localStorage:", error)
@@ -193,6 +214,15 @@ export function HomeComparison() {
     }
   }, [sortBy])
 
+  // Save mortgage settings to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem("listiq-mortgage-settings", JSON.stringify(mortgageSettings))
+    } catch (error) {
+      console.error("Error saving mortgage settings to localStorage:", error)
+    }
+  }, [mortgageSettings])
+
   // Update source and address when URL changes
   useEffect(() => {
     if (currentProperty.url) {
@@ -215,6 +245,14 @@ export function HomeComparison() {
       }
     }
   }, [currentProperty.url])
+
+  // Exit selection mode when no properties are available
+  useEffect(() => {
+    if (properties.length === 0 && isSelectionMode) {
+      setIsSelectionMode(false)
+      setSelectedPropertyIds(new Set())
+    }
+  }, [properties.length, isSelectionMode])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -278,6 +316,10 @@ export function HomeComparison() {
       newFavorites.delete(id)
       setFavoriteIds(newFavorites)
     }
+  }
+
+  const updateProperty = (updatedProperty: Property) => {
+    setProperties(properties.map((property) => (property.id === updatedProperty.id ? updatedProperty : property)))
   }
 
   const toggleFavorite = (id: string) => {
@@ -348,7 +390,121 @@ export function HomeComparison() {
     })
   }
 
+  const calculateTotalMonthlyPayment = (
+    propertyPrice: number,
+    downPaymentPercentage: number,
+    interestRate: number,
+    annualTaxes: number,
+    loanTermYears: number,
+  ) => {
+    const principal = propertyPrice * (1 - downPaymentPercentage / 100)
+    const monthlyRate = interestRate / 100 / 12
+    const numberOfPayments = loanTermYears * 12
+
+    let mortgagePayment = 0
+    if (interestRate === 0) {
+      mortgagePayment = principal / numberOfPayments
+    } else {
+      mortgagePayment =
+        (principal * monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) /
+        (Math.pow(1 + monthlyRate, numberOfPayments) - 1)
+    }
+
+    const monthlyInsurance = (propertyPrice * 0.005) / 12
+    const monthlyTaxes = annualTaxes / 12
+    const totalMonthly = mortgagePayment + monthlyInsurance + monthlyTaxes
+
+    return {
+      mortgagePayment,
+      monthlyInsurance,
+      monthlyTaxes,
+      totalMonthly,
+    }
+  }
+
+  const getLowestMonthlyPayment = () => {
+    if (properties.length === 0 || !mortgageSettings.enabled) return null
+
+    return properties.reduce((lowest, current) => {
+      const lowestPayment = calculateTotalMonthlyPayment(
+        lowest.price,
+        mortgageSettings.downPaymentPercentage,
+        mortgageSettings.interestRate,
+        lowest.taxes,
+        mortgageSettings.loanTermYears,
+      ).totalMonthly
+
+      const currentPayment = calculateTotalMonthlyPayment(
+        current.price,
+        mortgageSettings.downPaymentPercentage,
+        mortgageSettings.interestRate,
+        current.taxes,
+        mortgageSettings.loanTermYears,
+      ).totalMonthly
+
+      return currentPayment < lowestPayment ? current : lowest
+    })
+  }
+
+  const toggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode)
+    setSelectedPropertyIds(new Set())
+  }
+
+  const togglePropertySelection = (id: string) => {
+    const newSelection = new Set(selectedPropertyIds)
+    if (newSelection.has(id)) {
+      newSelection.delete(id)
+    } else {
+      newSelection.add(id)
+    }
+    setSelectedPropertyIds(newSelection)
+  }
+
+  const selectAllProperties = () => {
+    const currentProperties = activeTab === "favorites" ? properties.filter((p) => favoriteIds.has(p.id)) : properties
+
+    const allIds = new Set(currentProperties.map((p) => p.id))
+    setSelectedPropertyIds(allIds)
+  }
+
+  const removeSelectedProperties = () => {
+    if (selectedPropertyIds.size === 0) return
+
+    // Get the addresses of selected properties for the notification
+    const selectedAddresses = properties.filter((p) => selectedPropertyIds.has(p.id)).map((p) => p.address)
+
+    // Remove selected properties
+    setProperties(properties.filter((property) => !selectedPropertyIds.has(property.id)))
+
+    // Also remove from favorites if they were favorited
+    const newFavorites = new Set(favoriteIds)
+    selectedPropertyIds.forEach((id) => {
+      if (newFavorites.has(id)) {
+        newFavorites.delete(id)
+      }
+    })
+    setFavoriteIds(newFavorites)
+
+    // Clear selection
+    setSelectedPropertyIds(new Set())
+
+    // Show notification
+    toast({
+      title: `${selectedPropertyIds.size} ${selectedPropertyIds.size === 1 ? "property" : "properties"} removed`,
+      description:
+        selectedAddresses.length > 3
+          ? `${selectedAddresses.slice(0, 3).join(", ")} and ${selectedAddresses.length - 3} more have been removed.`
+          : `${selectedAddresses.join(", ")} ${selectedAddresses.length === 1 ? "has" : "have"} been removed.`,
+    })
+  }
+
+  const handleMortgageSettingsChange = (newSettings: MortgageSettingsType) => {
+    setMortgageSettings(newSettings)
+  }
+
   const bestValue = getBestValue()
+  const lowestMonthlyPayment = mortgageSettings.enabled ? getLowestMonthlyPayment() : null
 
   // Filter properties based on active tab
   const unsortedProperties =
@@ -358,7 +514,7 @@ export function HomeComparison() {
   const sortedProperties = useMemo(() => {
     if (!unsortedProperties.length) return []
 
-    const [field, direction] = sortBy.split("-") as [keyof Property | "pricePerSqFt", "asc" | "desc"]
+    const [field, direction] = sortBy.split("-") as [keyof Property | "pricePerSqFt" | "monthlyPayment", "asc" | "desc"]
 
     return [...unsortedProperties].sort((a, b) => {
       let valueA: number
@@ -368,6 +524,36 @@ export function HomeComparison() {
       if (field === "pricePerSqFt") {
         valueA = a.price / a.squareFeet
         valueB = b.price / b.squareFeet
+      }
+      // Handle special case for monthly payment
+      else if (field === "monthlyPayment") {
+        // Calculate monthly payments for both properties
+        const calculateMonthlyPayment = (property: Property) => {
+          if (!mortgageSettings.enabled) return property.price // Fallback to price if mortgage is disabled
+
+          const principal = property.price * (1 - mortgageSettings.downPaymentPercentage / 100)
+          const monthlyRate = mortgageSettings.interestRate / 100 / 12
+          const numberOfPayments = mortgageSettings.loanTermYears * 12
+
+          // Calculate mortgage payment
+          let mortgagePayment = 0
+          if (mortgageSettings.interestRate === 0) {
+            mortgagePayment = principal / numberOfPayments
+          } else {
+            mortgagePayment =
+              (principal * monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) /
+              (Math.pow(1 + monthlyRate, numberOfPayments) - 1)
+          }
+
+          // Calculate insurance and taxes
+          const monthlyInsurance = (property.price * 0.005) / 12
+          const monthlyTaxes = property.taxes / 12
+
+          return mortgagePayment + monthlyInsurance + monthlyTaxes
+        }
+
+        valueA = calculateMonthlyPayment(a)
+        valueB = calculateMonthlyPayment(b)
       } else {
         valueA = a[field] as number
         valueB = b[field] as number
@@ -379,7 +565,7 @@ export function HomeComparison() {
 
       return direction === "asc" ? valueA - valueB : valueB - valueA
     })
-  }, [unsortedProperties, sortBy])
+  }, [unsortedProperties, sortBy, mortgageSettings])
 
   return (
     <div className="space-y-8">
@@ -515,17 +701,48 @@ export function HomeComparison() {
           </Tabs>
         </div>
 
-        <div className="flex gap-2 w-full sm:w-auto">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          <MortgageSettings settings={mortgageSettings} onSettingsChange={handleMortgageSettingsChange} />
+
           {properties.length > 0 && (
-            <div className="mr-2">
-              <SortSelect
-                options={sortOptions}
-                value={sortBy}
-                onChange={(value) => setSortBy(value as SortField)}
-                placeholder="Sort by..."
-              />
-            </div>
+            <>
+              <div className="mr-2">
+                <SortSelect
+                  options={sortOptions}
+                  value={sortBy}
+                  onChange={(value) => setSortBy(value as SortField)}
+                  placeholder="Sort by..."
+                />
+              </div>
+
+              {isSelectionMode ? (
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={selectAllProperties} className="whitespace-nowrap">
+                    Select All
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={removeSelectedProperties}
+                    disabled={selectedPropertyIds.size === 0}
+                    className="whitespace-nowrap"
+                  >
+                    <Trash2 className="mr-1 h-4 w-4" />
+                    Remove {selectedPropertyIds.size > 0 ? `(${selectedPropertyIds.size})` : ""}
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={toggleSelectionMode} className="whitespace-nowrap">
+                    <X className="mr-1 h-4 w-4" />
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Button variant="outline" size="sm" onClick={toggleSelectionMode} className="whitespace-nowrap">
+                  Select Properties
+                </Button>
+              )}
+            </>
           )}
+
           <SaveSearchDialog properties={properties} onSave={saveSearch} />
           <ImportSearchDialog onImport={importSearch} />
           <SavedSearches savedSearches={savedSearches} onLoad={loadSearch} onDelete={deleteSearch} />
@@ -541,9 +758,15 @@ export function HomeComparison() {
                   key={property.id}
                   property={property}
                   onRemove={removeProperty}
+                  onUpdate={updateProperty}
                   isBestValue={bestValue?.id === property.id}
+                  isLowestPayment={lowestMonthlyPayment?.id === property.id}
                   isFavorite={favoriteIds.has(property.id)}
                   onToggleFavorite={toggleFavorite}
+                  isSelectionMode={isSelectionMode}
+                  isSelected={selectedPropertyIds.has(property.id)}
+                  onToggleSelect={() => togglePropertySelection(property.id)}
+                  mortgageSettings={mortgageSettings}
                 />
               ))}
             </div>
@@ -552,8 +775,14 @@ export function HomeComparison() {
             <ComparisonTable
               properties={sortedProperties}
               bestValueId={bestValue?.id}
+              lowestPaymentId={lowestMonthlyPayment?.id}
               favoriteIds={favoriteIds}
               onToggleFavorite={toggleFavorite}
+              onUpdate={updateProperty}
+              isSelectionMode={isSelectionMode}
+              selectedPropertyIds={selectedPropertyIds}
+              onToggleSelect={togglePropertySelection}
+              mortgageSettings={mortgageSettings}
             />
           </TabsContent>
           <TabsContent value="favorites">
@@ -572,9 +801,15 @@ export function HomeComparison() {
                     key={property.id}
                     property={property}
                     onRemove={removeProperty}
+                    onUpdate={updateProperty}
                     isBestValue={bestValue?.id === property.id}
+                    isLowestPayment={lowestMonthlyPayment?.id === property.id}
                     isFavorite={true}
                     onToggleFavorite={toggleFavorite}
+                    isSelectionMode={isSelectionMode}
+                    isSelected={selectedPropertyIds.has(property.id)}
+                    onToggleSelect={() => togglePropertySelection(property.id)}
+                    mortgageSettings={mortgageSettings}
                   />
                 ))}
               </div>

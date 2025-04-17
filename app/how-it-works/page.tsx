@@ -1,4 +1,4 @@
-import { ArrowRight, Heart, Save, Search, Home, BarChart3, Star } from "lucide-react"
+import { ArrowRight, Heart, Save, Search, Home, BarChart3, Star, DollarSign, Edit2 } from "lucide-react"
 import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
@@ -19,7 +19,7 @@ export default function HowItWorksPage() {
             <h2 className="text-2xl font-semibold mb-4">Getting Started</h2>
             <p className="text-lg mb-6">
               ListIQ helps you compare multiple properties side by side, analyzing key metrics like price per square
-              foot to help you find the best value. Follow these simple steps to get started:
+              foot and monthly payments to help you find the best value. Follow these simple steps to get started:
             </p>
           </section>
 
@@ -84,6 +84,10 @@ export default function HowItWorksPage() {
                   <strong>Best Value Indicator:</strong> Properties with the lowest price per square foot are
                   automatically highlighted as "Best Value"
                 </li>
+                <li>
+                  <strong>Sort Options:</strong> Sort properties by price, square footage, bedrooms, and more to find
+                  exactly what you're looking for
+                </li>
               </ul>
               <div className="bg-slate-50 p-4 rounded-md">
                 <p className="text-sm text-slate-700">
@@ -94,14 +98,53 @@ export default function HowItWorksPage() {
             </CardContent>
           </Card>
 
-          {/* Step 3 */}
+          {/* Step 3 - NEW Mortgage Calculator */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-600">
+                  <DollarSign className="h-5 w-5" />
+                </div>
+                <CardTitle>Step 3: Calculate Monthly Payments</CardTitle>
+              </div>
+              <CardDescription>See the true cost of ownership with mortgage calculations</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p>Use the built-in mortgage calculator to understand the true monthly cost of each property:</p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>
+                  <strong>Mortgage Settings:</strong> Customize interest rate, down payment percentage, and loan term
+                </li>
+                <li>
+                  <strong>Complete Cost Breakdown:</strong> See mortgage payment, property taxes, and home insurance
+                  costs
+                </li>
+                <li>
+                  <strong>Lowest Payment Indicator:</strong> Properties with the lowest total monthly payment are
+                  highlighted as "Lowest Payment"
+                </li>
+                <li>
+                  <strong>Sort by Monthly Payment:</strong> Find the most affordable properties based on total monthly
+                  cost
+                </li>
+              </ul>
+              <div className="bg-slate-50 p-4 rounded-md">
+                <p className="text-sm text-slate-700">
+                  <strong>Pro Tip:</strong> The "Best Value" (price per square foot) and "Lowest Payment" (monthly cost)
+                  indicators may highlight different properties, giving you multiple perspectives on value.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Step 4 - Favorite Properties (was Step 3) */}
           <Card>
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-600">
                   <Heart className="h-5 w-5" />
                 </div>
-                <CardTitle>Step 3: Favorite Properties</CardTitle>
+                <CardTitle>Step 4: Favorite Properties</CardTitle>
               </div>
               <CardDescription>Mark properties you're most interested in</CardDescription>
             </CardHeader>
@@ -121,14 +164,42 @@ export default function HowItWorksPage() {
             </CardContent>
           </Card>
 
-          {/* Step 4 */}
+          {/* Step 5 - Edit Properties (NEW) */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-600">
+                  <Edit2 className="h-5 w-5" />
+                </div>
+                <CardTitle>Step 5: Edit Properties</CardTitle>
+              </div>
+              <CardDescription>Update property details as needed</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p>Keep your property information accurate and up-to-date:</p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Click the pencil icon on any property to edit its details</li>
+                <li>Update prices if they change, or correct any information</li>
+                <li>Add missing details you discover later</li>
+                <li>Changes are saved automatically to your comparison</li>
+              </ul>
+              <div className="bg-slate-50 p-4 rounded-md">
+                <p className="text-sm text-slate-700">
+                  <strong>Pro Tip:</strong> If you change the property URL, the system will attempt to auto-detect the
+                  new source and address.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Step 6 - Save Searches (was Step 4) */}
           <Card>
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-600">
                   <Save className="h-5 w-5" />
                 </div>
-                <CardTitle>Step 4: Save Your Searches</CardTitle>
+                <CardTitle>Step 6: Save Your Searches</CardTitle>
               </div>
               <CardDescription>Save your comparisons to revisit later</CardDescription>
             </CardHeader>
@@ -138,6 +209,7 @@ export default function HowItWorksPage() {
                 <li>Click "Save Search" to name and save your current set of properties</li>
                 <li>Access your saved searches anytime from the "Saved Searches" dropdown</li>
                 <li>Load any saved search to continue your comparison where you left off</li>
+                <li>Share your searches with others via a link or downloadable file</li>
               </ul>
               <div className="bg-slate-50 p-4 rounded-md">
                 <p className="text-sm text-slate-700">
@@ -176,8 +248,38 @@ export default function HowItWorksPage() {
                 </CardHeader>
                 <CardContent>
                   <p>
-                    Pay special attention to the price per square foot and annual taxes, as these can significantly
-                    impact the long-term value of your investment.
+                    Pay special attention to the price per square foot and monthly payment calculations, as these can
+                    significantly impact the long-term value of your investment.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5 text-blue-600" />
+                    <CardTitle className="text-lg">Adjust Mortgage Settings</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p>
+                    Try different interest rates and down payment amounts to see how they affect your monthly payments
+                    and help you plan your budget.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-blue-600" />
+                    <CardTitle className="text-lg">Compare Multiple Metrics</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p>
+                    Don't just look at price - consider square footage, monthly payments, taxes, and location to get a
+                    complete picture of each property's value.
                   </p>
                 </CardContent>
               </Card>
