@@ -83,89 +83,65 @@ export async function sendEmail(data: EmailData): Promise<{ success: boolean; me
 
 export function formatSummaryEmail(summary: any, articles: any[], companies: any[]): { text: string; html: string } {
   // Format the plain text version
-  let text = `Daily Tech News Summary - ${new Date(summary.summary_date).toLocaleDateString()}
+  let text = `Daily Tech News Summary - ${new Date(summary.summary_date).toLocaleDateString()}\n\n`
+  text += `${summary.summary_text}\n\n`
+  text += "COMPANIES COVERED:\n"
 
-${summary.summary_text}
+  companies.forEach((company) => {
+    text += `- ${company.name}\n`
+  })
 
-`
-  \
-  text += "COMPANIES COVERED:
-"
-  companies.forEach((company) =>
-  text += `- ${company.name}
-`
-  )
-
-  text += "
-TOP ARTICLES:
-"
-  articles.slice(0, 5).forEach((article) =>
-  text += `- ${article.title}
-`
-  text += `  ${article.url}
-`
-  )
+  text += "\nTOP ARTICLES:\n"
+  articles.slice(0, 5).forEach((article) => {
+    text += `- ${article.title}\n`
+    text += `  ${article.url}\n`
+  })
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || ""
-  text += "
-  View
-  the
-  full
-  summary
-  at: " + appUrl + "/summaries/" + summary.id
+  text += `\nView the full summary at: ${appUrl}/summaries/${summary.id}`
 
-  // Format the HTML version
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1 style="color: #3b82f6; font-size: 24px;">Daily Tech News Summary</h1>
-      <p style="color: #6b7280; font-size: 16px;">${new Date(summary.summary_date).toLocaleDateString()}</p>
-      
-      <div style="margin: 20px 0; line-height: 1.6; color: #1f2937;">
-        ${summary.summary_text
-          .split("\n")
-          .map((paragraph) => `<p>${paragraph}</p>`)
-          .join("")}
-      </div>
-      
-      <div style="margin: 20px 0;">
-        <h2 style="font-size: 18px; color: #4b5563;">Companies Covered</h2>
-        <ul style="padding-left: 20px;">
-          ${companies.map((company) => `<li>${company.name}</li>`).join("")}
-        </ul>
-      </div>
-      
-      <div style="margin: 20px 0;">
-        <h2 style="font-size: 18px; color: #4b5563;">Top Articles</h2>
-        <ul style="padding-left: 20px;">
-          ${articles
-            .slice(0, 5)
-            .map(
-              (article) => `
-            <li>
-              <a href="${article.url}" style="color: #3b82f6; text-decoration: none;">
-                ${article.title}
-              </a>
-              <span style="color: #6b7280; font-size: 14px;"> - ${article.source || "Unknown source"}</span>
-            </li>
-          `,
-            )
-            .join("")}
-        </ul>
-      </div>
-      
-      <div style="margin: 30px 0; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
-        <a href="${appUrl}/summaries/${summary.id}" 
-           style="background-color: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-          View Full Summary
-        </a>
-      </div>
-      
-      <div style="margin-top: 30px; font-size: 12px; color: #9ca3af; text-align: center;">
-        <p>This email was sent from your Tech News Aggregator.</p>
-        <p>To manage your notification preferences, visit the <a href="${appUrl}/settings" style="color: #3b82f6;">settings page</a>.</p>
-      </div>
-    </div>
-  `
+  // Format the HTML version - simplified to avoid escape sequence issues
+  let html = '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">'
+  html += '<h1 style="color: #3b82f6; font-size: 24px;">Daily Tech News Summary</h1>'
+  html += `<p style="color: #6b7280; font-size: 16px;">${new Date(summary.summary_date).toLocaleDateString()}</p>`
+
+  html += '<div style="margin: 20px 0; line-height: 1.6; color: #1f2937;">'
+  const paragraphs = summary.summary_text.split("\n").filter(Boolean)
+  paragraphs.forEach((paragraph) => {
+    html += `<p>${paragraph}</p>`
+  })
+  html += "</div>"
+
+  html += '<div style="margin: 20px 0;">'
+  html += '<h2 style="font-size: 18px; color: #4b5563;">Companies Covered</h2>'
+  html += '<ul style="padding-left: 20px;">'
+  companies.forEach((company) => {
+    html += `<li>${company.name}</li>`
+  })
+  html += "</ul>"
+  html += "</div>"
+
+  html += '<div style="margin: 20px 0;">'
+  html += '<h2 style="font-size: 18px; color: #4b5563;">Top Articles</h2>'
+  html += '<ul style="padding-left: 20px;">'
+  articles.slice(0, 5).forEach((article) => {
+    html += "<li>"
+    html += `<a href="${article.url}" style="color: #3b82f6; text-decoration: none;">${article.title}</a>`
+    html += `<span style="color: #6b7280; font-size: 14px;"> - ${article.source || "Unknown source"}</span>`
+    html += "</li>"
+  })
+  html += "</ul>"
+  html += "</div>"
+
+  html += '<div style="margin: 30px 0; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">'
+  html += `<a href="${appUrl}/summaries/${summary.id}" style="background-color: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Full Summary</a>`
+  html += "</div>"
+
+  html += '<div style="margin-top: 30px; font-size: 12px; color: #9ca3af; text-align: center;">'
+  html += "<p>This email was sent from your Tech News Aggregator.</p>"
+  html += `<p>To manage your notification preferences, visit the <a href="${appUrl}/settings" style="color: #3b82f6;">settings page</a>.</p>`
+  html += "</div>"
+  html += "</div>"
 
   return { text, html }
 }

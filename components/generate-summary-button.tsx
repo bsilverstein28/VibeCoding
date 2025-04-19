@@ -15,45 +15,26 @@ export function GenerateSummaryButton() {
     setIsGenerating(true)
 
     try {
-      // First, make the request with explicit error handling
-      const response = await fetch("/api/summaries/generate", {
+      // Make the API request
+      const response = await fetch("/api/summaries/generate-simple", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Accept: "application/json",
         },
-        body: JSON.stringify({}), // Empty object to generate for all companies
       })
 
-      // Get the raw text response first
-      const rawText = await response.text()
-
-      // Check if the response starts with HTML or error messages
-      if (rawText.trim().startsWith("<") || rawText.includes("Internal server error")) {
-        console.error("Server returned HTML or error page instead of JSON:", rawText.substring(0, 200))
-        throw new Error("Server error: The API returned an HTML response instead of JSON")
-      }
-
-      // Try to parse as JSON
-      let data
-      try {
-        data = JSON.parse(rawText)
-      } catch (parseError) {
-        console.error("Failed to parse response as JSON:", parseError)
-        console.error("Raw response:", rawText.substring(0, 200))
-        throw new Error("Server returned invalid JSON response")
-      }
-
-      // Check if the response was successful
+      // Check if the response is OK
       if (!response.ok) {
-        throw new Error(data?.message || `Error ${response.status}: ${response.statusText}`)
+        throw new Error(`Server error: ${response.status}`)
       }
 
-      const aiNote = data.usedAI === false ? " (using fallback method)" : ""
+      // Parse the JSON response
+      const data = await response.json()
 
+      // Show success message
       toast({
         title: "Summary Generated",
-        description: `Successfully created a summary based on ${data.articleCount} articles${aiNote}.`,
+        description: `Successfully created a summary based on ${data.articleCount || 0} articles.`,
       })
 
       // Refresh the page to show the new summary
@@ -62,7 +43,7 @@ export function GenerateSummaryButton() {
       console.error("Error generating summary:", error)
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to generate summary. Please try again.",
+        description: "Failed to generate summary. Please try again later.",
         variant: "destructive",
       })
     } finally {

@@ -6,6 +6,8 @@ import { getOpenAIConfig } from "./ai-config"
 // Simple fallback summary generator that doesn't use AI
 async function generateFallbackSummary(articles: any[]): Promise<string> {
   try {
+    console.log("Generating fallback summary for", articles.length, "articles")
+
     // Sort articles by date (newest first)
     const sortedArticles = [...articles].sort((a, b) => {
       if (!a.published_date || !b.published_date) return 0
@@ -13,23 +15,19 @@ async function generateFallbackSummary(articles: any[]): Promise<string> {
     })
 
     // Get unique company names
-    const companies = [...new Set(sortedArticles.map((article) => article.companies?.name).filter(Boolean))]
+    const companies = [...new Set(articles.map((article) => article.companies?.name).filter(Boolean))]
+    console.log("Companies in articles:", companies)
 
     // Create a simple summary
-    let summary = `This is an automated summary of recent news about ${companies.join(", ")}.
-
-`
+    let summary = "This is an automated summary of recent news about " + companies.join(", ") + ".\n\n"
 
     // Add top 5 article titles
-    summary += `Top headlines:
-`
+    summary += "Top headlines:\n"
     sortedArticles.slice(0, 5).forEach((article, index) => {
-      summary += `${index + 1}. ${article.title} (${article.source || "Unknown source"})
-`
+      summary += index + 1 + ". " + article.title + " (" + (article.source || "Unknown source") + ")\n"
     })
 
-    summary += `
-This summary covers ${articles.length} articles from ${companies.length} companies.`
+    summary += "\nThis summary covers " + articles.length + " articles from " + companies.length + " companies."
 
     return summary
   } catch (error) {
@@ -39,34 +37,36 @@ This summary covers ${articles.length} articles from ${companies.length} compani
 }
 
 export async function generateNewsSummary(companyIds: string[] = []) {
-  try {
-    const supabase = createServerSupabaseClient()
-    let useAI = true
+  console.log("Starting generateNewsSummary function")
 
-    // Check if OpenAI API key is configured
+  try {
+    // Step 1: Initialize Supabase client
+    console.log("Initializing Supabase client")
+    const supabase = createServerSupabaseClient()
+    if (!supabase) {
+      console.error("Failed to create Supabase client")
+      return {
+        success: false,
+        message: "Failed to initialize database connection",
+      }
+    }
+
+    // Step 2: Check if OpenAI API key is configured
+    console.log("Checking OpenAI configuration")
+    let useAI = true
     const aiConfig = getOpenAIConfig()
     if (!aiConfig) {
-      console.log("OpenAI API key not configured, using fallback summary generation")
+      console.log("OpenAI API key not configured, will use fallback summary generation")
       useAI = false
     }
 
-    // Get recent articles for the specified companies or all companies if none specified
+    // Step 3: Fetch articles from the database
+    console.log("Fetching articles from database")
+    let articles: any[] = []
     try {
       const query = supabase
         .from("news_articles")
-        .select(`
-          id, 
-          title, 
-          url, 
-          source, 
-          summary, 
-          published_date,
-          companies (
-            id,
-            name,
-            category
-          )
-        `)
+        .select("id, title, url, source, summary, published_date, companies(id, name, category)")
         .order("published_date", { ascending: false })
         .limit(20)
 
@@ -74,28 +74,46 @@ export async function generateNewsSummary(companyIds: string[] = []) {
         query.in("company_id", companyIds)
       }
 
-      const { data: articles, error } = await query
+      const { data, error } = await query
 
       if (error) {
         console.error("Database query error:", error)
         return {
           success: false,
-          message: `Database error: ${error.message}`,
+          message: "Database error: " + error.message,
         }
       }
 
-      if (!articles || articles.length === 0) {
+      articles = data || []
+      console.log("Fetched", articles.length, "articles from database")
+
+      if (articles.length === 0) {
+        console.log("No articles found to summarize")
         return {
           success: false,
           message: "No recent articles found to summarize",
         }
       }
+    } catch (queryError) {
+      console.error("Error querying database:", queryError)
+      return {
+        success: false,
+        message: "Error querying database: " + (queryError instanceof Error ? queryError.message : String(queryError)),
+      }
+    }
 
-      // Determine the categories of companies in the articles
-      const categories = [...new Set(articles.map((article: any) => article.companies?.category).filter(Boolean))]
+    // Step 4: Generate a summary text (either with AI or fallback)
+    console.log("Preparing to generate summary")
+    let summaryText = ""
+    let categoryToUse = "Default"
+
+    // Try to determine the category
+    try {
+      const categories = [...new Set(articles.map((article) => article.companies?.category).filter(Boolean))]
+      console.log("Categories found in articles:", categories)
 
       // If no categories found, use the default category
-      let categoryToUse = categories.length > 0 ? categories[0] : "Default"
+      categoryToUse = categories.length > 0 ? categories[0] : "Default"
 
       // If multiple categories, prioritize the most common one
       if (categories.length > 1) {
@@ -107,69 +125,89 @@ export async function generateNewsSummary(companyIds: string[] = []) {
         categoryToUse = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])[0][0]
       }
 
-      // Get the appropriate prompt for this category
-      let promptToUse = null
+      console.log("Selected category for summary:", categoryToUse)
+    } catch (categoryError) {
+      console.error("Error determining category:", categoryError)
+      // Continue with default category
+    }
+
+    // Generate the summary text
+    if (useAI && aiConfig) {
       try {
-        const { data: categoryPrompt, error: promptError } = await supabase
-          .from("category_prompts")
-          .select("*")
-          .eq("category", categoryToUse)
-          .single()
+        console.log("Attempting to generate AI summary")
 
-        if (promptError && promptError.code !== "PGRST116") {
-          console.error("Error fetching category prompt:", promptError)
-        } else {
-          promptToUse = categoryPrompt
-        }
-      } catch (promptError) {
-        console.error("Error fetching category prompt:", promptError)
-      }
-
-      // Fall back to default if no specific prompt is found
-      if (!promptToUse) {
+        // Get the appropriate prompt for this category
+        let promptToUse = null
         try {
-          const { data: defaultPrompt, error: defaultPromptError } = await supabase
+          console.log("Fetching prompt for category:", categoryToUse)
+          const { data: categoryPrompt, error: promptError } = await supabase
             .from("category_prompts")
             .select("*")
-            .eq("category", "Default")
+            .eq("category", categoryToUse)
             .single()
 
-          if (defaultPromptError) {
-            console.error("Error fetching default prompt:", defaultPromptError)
-            useAI = false
+          if (promptError) {
+            if (promptError.code === "PGRST116") {
+              console.log("No specific prompt found for category:", categoryToUse)
+            } else {
+              console.error("Error fetching category prompt:", promptError)
+            }
           } else {
-            promptToUse = defaultPrompt
+            promptToUse = categoryPrompt
+            console.log("Found prompt for category:", categoryToUse)
           }
-        } catch (defaultPromptError) {
-          console.error("Error fetching default prompt:", defaultPromptError)
-          useAI = false
+        } catch (promptError) {
+          console.error("Exception fetching category prompt:", promptError)
         }
-      }
 
-      let summaryText = ""
-
-      if (useAI && promptToUse && aiConfig) {
-        try {
-          // Format articles for the AI prompt
-          const articlesText = articles
-            .map((article: any) => {
-              return `
-Title: ${article.title}
-Source: ${article.source || "Unknown"}
-Company: ${article.companies?.name || "Unknown"}
-Category: ${article.companies?.category || "Unknown"}
-Summary: ${article.summary || "No summary available"}
-              `.trim()
-            })
-            .join("\n\n")
-
-          console.log("Generating AI summary using OpenAI...")
-
-          // Generate the summary using AI with the category-specific prompt
+        // Fall back to default if no specific prompt is found
+        if (!promptToUse) {
           try {
+            console.log("Fetching default prompt")
+            const { data: defaultPrompt, error: defaultPromptError } = await supabase
+              .from("category_prompts")
+              .select("*")
+              .eq("category", "Default")
+              .single()
+
+            if (defaultPromptError) {
+              console.error("Error fetching default prompt:", defaultPromptError)
+              console.log("Will use fallback summary generation")
+              useAI = false
+            } else {
+              promptToUse = defaultPrompt
+              console.log("Using default prompt")
+            }
+          } catch (defaultPromptError) {
+            console.error("Exception fetching default prompt:", defaultPromptError)
+            useAI = false
+          }
+        }
+
+        // If we have a prompt and AI is enabled, generate the summary
+        if (promptToUse && useAI) {
+          try {
+            // Format articles for the AI prompt
+            console.log("Formatting articles for AI prompt")
+            const formattedArticles = articles.map((article) => {
+              return [
+                "Title: " + article.title,
+                "Source: " + (article.source || "Unknown"),
+                "Company: " + (article.companies?.name || "Unknown"),
+                "Category: " + (article.companies?.category || "Unknown"),
+                "Summary: " + (article.summary || "No summary available"),
+              ].join("\n")
+            })
+
+            const articlesText = formattedArticles.join("\n\n")
+            const userPrompt = promptToUse.user_prompt + "\n\nARTICLES:\n" + articlesText
+
+            console.log("Generating AI summary using OpenAI...")
+
+            // Generate the summary using AI with the category-specific prompt
             const { text } = await generateText({
               model: openai(aiConfig.model),
-              prompt: `${promptToUse.user_prompt}\n\nARTICLES:\n${articlesText}`,
+              prompt: userPrompt,
               system: promptToUse.system_prompt,
               temperature: 0.7, // Add some variability
               maxTokens: 1000, // Limit response size
@@ -179,106 +217,127 @@ Summary: ${article.summary || "No summary available"}
             console.log("AI summary generated successfully")
           } catch (aiGenError) {
             console.error("Error during AI text generation:", aiGenError)
-            throw aiGenError
+            console.log("Falling back to simple summary generation")
+            summaryText = await generateFallbackSummary(articles)
+            useAI = false
           }
-        } catch (aiError) {
-          console.error("AI generation error:", aiError)
-          // Fall back to simple summary generation
-          console.log("Falling back to simple summary generation")
+        } else {
+          // No prompt or AI disabled
+          console.log("No prompt available or AI disabled, using fallback")
           summaryText = await generateFallbackSummary(articles)
           useAI = false
         }
-      } else {
-        // Use fallback summary generation
+      } catch (aiError) {
+        console.error("AI generation error:", aiError)
+        console.log("Falling back to simple summary generation")
         summaryText = await generateFallbackSummary(articles)
         useAI = false
       }
+    } else {
+      // AI not enabled
+      console.log("AI not enabled, using fallback summary generation")
+      summaryText = await generateFallbackSummary(articles)
+      useAI = false
+    }
 
-      try {
-        // Create a new summary in the database
-        const today = new Date().toISOString().split("T")[0]
+    // Step 5: Save the summary to the database
+    console.log("Saving summary to database")
+    try {
+      const today = new Date().toISOString().split("T")[0]
+      console.log("Creating summary record with date:", today)
 
-        const { data: summary, error: summaryError } = await supabase
-          .from("daily_summaries")
-          .insert({
-            summary_date: today,
-            summary_text: summaryText,
-          })
-          .select()
-          .single()
+      const { data: summary, error: summaryError } = await supabase
+        .from("daily_summaries")
+        .insert({
+          summary_date: today,
+          summary_text: summaryText,
+        })
+        .select()
+        .single()
 
-        if (summaryError) {
-          console.error("Error creating summary:", summaryError)
-          return {
-            success: false,
-            message: `Error creating summary: ${summaryError.message}`,
-          }
+      if (summaryError) {
+        console.error("Error creating summary:", summaryError)
+        return {
+          success: false,
+          message: "Error creating summary: " + summaryError.message,
         }
+      }
 
-        // Link the summary to companies
-        try {
-          if (companyIds && companyIds.length > 0) {
-            const summaryCompaniesData = companyIds.map((companyId) => ({
-              summary_id: summary.id,
-              company_id: companyId,
-            }))
+      console.log("Summary created with ID:", summary.id)
 
-            await supabase.from("summary_companies").insert(summaryCompaniesData)
-          } else {
-            // If no specific companies were provided, link to all companies that had articles
-            const uniqueCompanyIds = [...new Set(articles.map((article: any) => article.companies?.id).filter(Boolean))]
+      // Step 6: Link the summary to companies
+      console.log("Linking summary to companies")
+      try {
+        if (companyIds && companyIds.length > 0) {
+          console.log("Using provided company IDs:", companyIds)
+          const summaryCompaniesData = companyIds.map((companyId) => ({
+            summary_id: summary.id,
+            company_id: companyId,
+          }))
 
+          const { error: linkError } = await supabase.from("summary_companies").insert(summaryCompaniesData)
+          if (linkError) {
+            console.error("Error linking summary to companies:", linkError)
+          }
+        } else {
+          // If no specific companies were provided, link to all companies that had articles
+          const uniqueCompanyIds = [...new Set(articles.map((article) => article.companies?.id).filter(Boolean))]
+          console.log("Extracted company IDs from articles:", uniqueCompanyIds)
+
+          if (uniqueCompanyIds.length > 0) {
             const summaryCompaniesData = uniqueCompanyIds.map((companyId) => ({
               summary_id: summary.id,
               company_id: companyId,
             }))
 
-            await supabase.from("summary_companies").insert(summaryCompaniesData)
+            const { error: linkError } = await supabase.from("summary_companies").insert(summaryCompaniesData)
+            if (linkError) {
+              console.error("Error linking summary to companies:", linkError)
+            }
           }
-        } catch (linkError) {
-          console.error("Error linking summary to companies:", linkError)
-          // Continue despite this error
         }
-
-        // Link the summary to articles
-        try {
-          const summaryArticlesData = articles.map((article: any) => ({
-            summary_id: summary.id,
-            article_id: article.id,
-          }))
-
-          await supabase.from("summary_articles").insert(summaryArticlesData)
-        } catch (articleLinkError) {
-          console.error("Error linking summary to articles:", articleLinkError)
-          // Continue despite this error
-        }
-
-        return {
-          success: true,
-          summary: summary,
-          articleCount: articles.length,
-          category: categoryToUse,
-          usedAI: useAI,
-        }
-      } catch (dbError) {
-        console.error("Database operation error:", dbError)
-        return {
-          success: false,
-          message: `Database operation error: ${dbError instanceof Error ? dbError.message : String(dbError)}`,
-        }
+      } catch (linkError) {
+        console.error("Exception linking summary to companies:", linkError)
+        // Continue despite this error
       }
-    } catch (queryError) {
-      console.error("Error querying database:", queryError)
+
+      // Step 7: Link the summary to articles
+      console.log("Linking summary to articles")
+      try {
+        const summaryArticlesData = articles.map((article) => ({
+          summary_id: summary.id,
+          article_id: article.id,
+        }))
+
+        const { error: articleLinkError } = await supabase.from("summary_articles").insert(summaryArticlesData)
+        if (articleLinkError) {
+          console.error("Error linking summary to articles:", articleLinkError)
+        }
+      } catch (articleLinkError) {
+        console.error("Exception linking summary to articles:", articleLinkError)
+        // Continue despite this error
+      }
+
+      console.log("Summary generation completed successfully")
+      return {
+        success: true,
+        summary: summary,
+        articleCount: articles.length,
+        category: categoryToUse,
+        usedAI: useAI,
+      }
+    } catch (dbError) {
+      console.error("Database operation error:", dbError)
       return {
         success: false,
-        message: `Error querying database: ${queryError instanceof Error ? queryError.message : String(queryError)}`,
+        message: "Database operation error: " + (dbError instanceof Error ? dbError.message : String(dbError)),
       }
     }
   } catch (error) {
     console.error("Error generating news summary:", error)
     return {
       success: false,
-      message: `Failed to generate news summary: ${error instanceof Error ? error.message : String(error)}`,
+      message: "Failed to generate news summary: " + (error instanceof Error ? error.message : String(error)),
     }
   }
 }
