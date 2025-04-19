@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { Settings2 } from "lucide-react"
+import { Settings2, Info } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -135,6 +135,19 @@ export function MortgageSettings({ settings, onSettingsChange }: MortgageSetting
               onChange={handleLoanTermChange}
               className="col-span-3"
             />
+          </div>
+
+          <div className="bg-blue-50 p-3 rounded-md mt-2 text-sm">
+            <div className="flex items-start gap-2">
+              <Info className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-blue-700">Note about calculations:</p>
+                <p className="text-blue-600">
+                  Monthly payment calculations include mortgage principal and interest, property taxes, and estimated
+                  home insurance (calculated at 0.5% of home value annually).
+                </p>
+              </div>
+            </div>
           </div>
         </div>
         <DialogFooter>

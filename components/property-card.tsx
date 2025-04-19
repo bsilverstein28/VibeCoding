@@ -1,12 +1,13 @@
 "use client"
 
-import { ExternalLink, Trash2, Heart, DollarSign } from "lucide-react"
+import { ExternalLink, Trash2, Heart, DollarSign, Info } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import type { Property } from "@/components/home-comparison"
 import type { MortgageSettings } from "@/components/mortgage-settings"
 import { calculateTotalMonthlyPayment } from "@/utils/mortgage-calculator"
@@ -139,6 +140,19 @@ export function PropertyCard({
               <div className="flex items-center gap-1 text-sm font-medium text-blue-600">
                 <DollarSign className="h-4 w-4" />
                 <span>Mortgage Details ({mortgageSettings.interestRate}% rate)</span>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-blue-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs">
+                      <p>
+                        Total monthly payment includes mortgage principal and interest, property taxes, and estimated
+                        home insurance (0.5% of home value annually).
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                 <div>

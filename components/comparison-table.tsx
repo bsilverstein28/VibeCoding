@@ -1,6 +1,6 @@
 "use client"
 
-import { ExternalLink, Heart, DollarSign } from "lucide-react"
+import { ExternalLink, Heart, DollarSign, Info } from "lucide-react"
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -63,6 +63,19 @@ export function ComparisonTable({
                 <div className="flex items-center gap-1">
                   <DollarSign className="h-4 w-4" />
                   <span>Monthly Payment</span>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs">
+                        <p>
+                          Total monthly payment includes mortgage principal and interest, property taxes, and estimated
+                          home insurance (0.5% of home value annually).
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
               </TableHead>
             )}
@@ -148,6 +161,9 @@ export function ComparisonTable({
                               <div>${Math.round(mortgagePayment.monthlyTaxes).toLocaleString()}</div>
                               <div>Monthly Insurance:</div>
                               <div>${Math.round(mortgagePayment.monthlyInsurance).toLocaleString()}</div>
+                              <div className="col-span-2 text-xs text-muted-foreground mt-1">
+                                Insurance estimated at 0.5% of home value annually
+                              </div>
                             </div>
                           </div>
                         </TooltipContent>
