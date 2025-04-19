@@ -6,6 +6,8 @@ import { Inter } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { SiteHeader } from "@/components/site-header"
 import { Toaster } from "@/components/ui/toaster"
+import { Analytics } from "@/components/analytics"
+import { Suspense } from "react"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -25,8 +27,9 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <SiteHeader />
-          {children}
+          <Suspense>{children}</Suspense>
           <Toaster />
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>
