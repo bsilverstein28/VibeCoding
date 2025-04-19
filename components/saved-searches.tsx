@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { BookMarked, Clock, Trash2 } from "lucide-react"
+import { BookMarked, Clock, Trash2, Edit } from "lucide-react"
 
 import {
   DropdownMenu,
@@ -24,9 +24,10 @@ interface SavedSearchesProps {
   savedSearches: SavedSearch[]
   onLoad: (searchId: string) => void
   onDelete: (searchId: string) => void
+  onUpdate: (searchId: string) => void
 }
 
-export function SavedSearches({ savedSearches, onLoad, onDelete }: SavedSearchesProps) {
+export function SavedSearches({ savedSearches, onLoad, onDelete, onUpdate }: SavedSearchesProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const { toast } = useToast()
 
@@ -45,6 +46,11 @@ export function SavedSearches({ savedSearches, onLoad, onDelete }: SavedSearches
       title: "Search deleted",
       description: `"${searchName}" has been deleted.`,
     })
+  }
+
+  const handleUpdate = (searchId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    onUpdate(searchId)
   }
 
   if (savedSearches.length === 0) {
@@ -76,6 +82,15 @@ export function SavedSearches({ savedSearches, onLoad, onDelete }: SavedSearches
               <div className="flex w-full items-center justify-between">
                 <span className="truncate mr-2">{search.name}</span>
                 <div className="flex items-center">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-slate-400 hover:text-blue-500"
+                    onClick={(e) => handleUpdate(search.id, e)}
+                  >
+                    <Edit className="h-3 w-3" />
+                    <span className="sr-only">Update</span>
+                  </Button>
                   <ShareSearchDialog
                     search={search}
                     buttonSize="sm"
@@ -131,6 +146,18 @@ export function SavedSearches({ savedSearches, onLoad, onDelete }: SavedSearches
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-slate-400 hover:text-blue-500"
+                      onClick={(e) => {
+                        handleUpdate(search.id, e)
+                        setIsDialogOpen(false)
+                      }}
+                    >
+                      <Edit className="h-4 w-4" />
+                      <span className="sr-only">Update</span>
+                    </Button>
                     <ShareSearchDialog search={search} onClick={(e: React.MouseEvent) => e.stopPropagation()} />
                     <Button
                       variant="ghost"

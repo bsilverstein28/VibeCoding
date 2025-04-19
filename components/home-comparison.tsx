@@ -94,6 +94,7 @@ export function HomeComparison() {
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [mortgageSettings, setMortgageSettings] = useState<MortgageSettingsType>(DEFAULT_MORTGAGE_SETTINGS)
   const { toast } = useToast()
+  const [currentSearch, setCurrentSearch] = useState<SavedSearch | null>(null)
 
   const [currentProperty, setCurrentProperty] = useState<Partial<Property>>({
     id: generateId(),
@@ -345,15 +346,31 @@ export function HomeComparison() {
     setFavoriteIds(newFavorites)
   }
 
-  const saveSearch = (name: string, propertiesToSave: Property[]) => {
-    const newSearch: SavedSearch = {
-      id: generateId(),
-      name,
-      properties: propertiesToSave,
-      savedAt: new Date().toISOString(),
+  const saveSearch = (name: string, propertiesToSave: Property[], existingSearchId?: string) => {
+    if (existingSearchId) {
+      // Update existing search
+      setSavedSearches(
+        savedSearches.map((search) =>
+          search.id === existingSearchId
+            ? {
+                ...search,
+                name,
+                properties: propertiesToSave,
+                savedAt: new Date().toISOString(),
+              }
+            : search,
+        ),
+      )
+    } else {
+      // Create new search
+      const newSearch: SavedSearch = {
+        id: generateId(),
+        name,
+        properties: propertiesToSave,
+        savedAt: new Date().toISOString(),
+      }
+      setSavedSearches([newSearch, ...savedSearches])
     }
-
-    setSavedSearches([newSearch, ...savedSearches])
   }
 
   const loadSearch = (searchId: string) => {
@@ -374,6 +391,15 @@ export function HomeComparison() {
 
   const deleteSearch = (searchId: string) => {
     setSavedSearches(savedSearches.filter((search) => search.id !== searchId))
+  }
+
+  const updateSearch = (searchId: string) => {
+    const search = savedSearches.find((s) => s.id === searchId)
+    if (!search) return
+
+    setCurrentSearch(search)
+    // Load the properties from the search
+    setProperties(search.properties)
   }
 
   const importSearch = (search: SavedSearch) => {
@@ -743,9 +769,19 @@ export function HomeComparison() {
             </>
           )}
 
-          <SaveSearchDialog properties={properties} onSave={saveSearch} />
+          <SaveSearchDialog
+            properties={properties}
+            onSave={saveSearch}
+            existingSearches={savedSearches}
+            currentSearch={currentSearch}
+          />
           <ImportSearchDialog onImport={importSearch} />
-          <SavedSearches savedSearches={savedSearches} onLoad={loadSearch} onDelete={deleteSearch} />
+          <SavedSearches
+            savedSearches={savedSearches}
+            onLoad={loadSearch}
+            onDelete={deleteSearch}
+            onUpdate={updateSearch}
+          />
         </div>
       </div>
 

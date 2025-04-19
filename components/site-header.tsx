@@ -9,7 +9,7 @@ export function SiteHeader() {
       <div className="container mx-auto py-4 px-4">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-2">
-            <div className="relative h-12 w-36 sm:h-14 sm:w-40">
+            <div className="relative h-10 w-40 sm:h-12 sm:w-44">
               <Image src="/images/logo.png" alt="ListIQ" fill className="object-contain" priority />
             </div>
           </Link>
