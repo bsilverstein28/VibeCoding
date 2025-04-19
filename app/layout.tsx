@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { SiteHeader } from "@/components/site-header"
 import { Toaster } from "@/components/ui/toaster"
 import { Analytics } from "@/components/analytics"
+import { GoogleAnalytics } from "@/components/google-analytics"
 import { Suspense } from "react"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -24,12 +25,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>{/* Google Analytics is added via the GoogleAnalytics component */}</head>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <SiteHeader />
           <Suspense>{children}</Suspense>
           <Toaster />
           <Analytics />
+          <Suspense fallback={null}>
+            <GoogleAnalytics />
+          </Suspense>
         </ThemeProvider>
       </body>
     </html>
