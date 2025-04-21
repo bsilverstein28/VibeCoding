@@ -1,311 +1,90 @@
 import { Suspense } from "react"
-import Link from "next/link"
+import ConsensusPicksDisplay from "@/components/consensus-picks-display"
+import LoadingConsensus from "@/components/loading-consensus"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Plus, RefreshCw } from "lucide-react"
-import { createServerSupabaseClient } from "@/lib/supabase"
-import { formatDistanceToNow } from "date-fns"
-import { GenerateSummaryButton } from "@/components/generate-summary-button"
-import { NewsSearchStatus } from "@/components/news-search-status"
+import { ArrowRight, Calendar, TrendingUp } from "lucide-react"
+import Link from "next/link"
 
-async function getLatestSummary() {
-  const supabase = createServerSupabaseClient()
-
-  const { data: summary } = await supabase
-    .from("daily_summaries")
-    .select("*, summary_companies(company_id, companies(name))")
-    .order("summary_date", { ascending: false })
-    .limit(1)
-    .single()
-
-  return summary
-}
-
-async function getTrackedCompanies() {
-  const supabase = createServerSupabaseClient()
-
-  const { data: companies } = await supabase.from("companies").select("*").order("name")
-
-  return companies || []
-}
-
-async function getRecentArticles() {
-  const supabase = createServerSupabaseClient()
-
-  const { data: articles } = await supabase
-    .from("news_articles")
-    .select("*, companies(name)")
-    .order("published_date", { ascending: false })
-    .limit(5)
-
-  return articles || []
-}
-
-function LatestSummary() {
+export default function Home() {
   return (
-    <Suspense fallback={<SummarySkeleton />}>
-      <LatestSummaryContent />
-    </Suspense>
-  )
-}
-
-async function LatestSummaryContent() {
-  const summary = await getLatestSummary()
-
-  if (!summary) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Latest Summary</CardTitle>
-          <CardDescription>No summaries available yet</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            Add companies to track and wait for the daily summary to be generated.
-          </p>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button asChild>
-            <Link href="/companies/new">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Company
-            </Link>
-          </Button>
-          <GenerateSummaryButton />
-        </CardFooter>
-      </Card>
-    )
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Latest Summary</CardTitle>
-        <CardDescription>
-          {new Date(summary.summary_date).toLocaleDateString()} -
-          {summary.summary_companies?.map((sc: any) => sc.companies?.name).join(", ")}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="prose dark:prose-invert">
-          <p>{summary.summary_text}</p>
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-between">
-        <Button asChild variant="outline">
-          <Link href={`/summaries/${summary.id}`}>View Details</Link>
-        </Button>
-        <GenerateSummaryButton />
-      </CardFooter>
-    </Card>
-  )
-}
-
-function SummarySkeleton() {
-  return (
-    <Card>
-      <CardHeader>
-        <Skeleton className="h-8 w-1/3" />
-        <Skeleton className="h-4 w-1/2" />
-      </CardHeader>
-      <CardContent>
-        <Skeleton className="h-4 w-full mb-2" />
-        <Skeleton className="h-4 w-full mb-2" />
-        <Skeleton className="h-4 w-3/4" />
-      </CardContent>
-      <CardFooter className="flex justify-between">
-        <Skeleton className="h-10 w-28" />
-        <Skeleton className="h-10 w-40" />
-      </CardFooter>
-    </Card>
-  )
-}
-
-function TrackedCompanies() {
-  return (
-    <Suspense fallback={<CompaniesSkeleton />}>
-      <TrackedCompaniesContent />
-    </Suspense>
-  )
-}
-
-async function TrackedCompaniesContent() {
-  const companies = await getTrackedCompanies()
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle>Tracked Companies</CardTitle>
-          <CardDescription>Companies you are currently tracking</CardDescription>
-        </div>
-        <Button asChild size="sm">
-          <Link href="/companies/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Add
-          </Link>
-        </Button>
-      </CardHeader>
-      <CardContent>
-        {companies.length === 0 ? (
-          <p className="text-muted-foreground">No companies added yet.</p>
-        ) : (
-          <div className="space-y-2">
-            {companies.map((company) => (
-              <div key={company.id} className="flex items-center justify-between border-b pb-2">
-                <div>
-                  <p className="font-medium">{company.name}</p>
-                  {company.website && <p className="text-sm text-muted-foreground">{company.website}</p>}
-                </div>
-                <Button asChild variant="ghost" size="sm">
-                  <Link href={`/companies/${company.id}`}>View</Link>
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
-
-function CompaniesSkeleton() {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <Skeleton className="h-8 w-1/3" />
-          <Skeleton className="h-4 w-1/2" />
-        </div>
-        <Skeleton className="h-10 w-20" />
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center justify-between border-b pb-2">
-              <div>
-                <Skeleton className="h-5 w-40 mb-1" />
-                <Skeleton className="h-4 w-32" />
-              </div>
-              <Skeleton className="h-8 w-16" />
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <section className="bg-gradient-to-r from-blue-900 to-indigo-800 text-white py-16">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto text-center">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">NBA Consensus Picks</h1>
+            <p className="text-xl mb-8">
+              AI-powered research across multiple betting sites to find the strongest consensus picks
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button asChild size="lg" className="bg-emerald-600 hover:bg-emerald-700">
+                <Link href="#today-picks">
+                  Today's Picks <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button asChild size="lg" className="bg-amber-500 hover:bg-amber-600 text-white">
+                <Link href="/history">
+                  <Calendar className="mr-2 h-4 w-4" /> Historical Results
+                </Link>
+              </Button>
+              <Button asChild size="lg" className="bg-sky-500 hover:bg-sky-600 text-white">
+                <Link href="/admin">Admin Dashboard</Link>
+              </Button>
             </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function RecentArticles() {
-  return (
-    <Suspense fallback={<ArticlesSkeleton />}>
-      <RecentArticlesContent />
-    </Suspense>
-  )
-}
-
-async function RecentArticlesContent() {
-  const articles = await getRecentArticles()
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Recent Articles</CardTitle>
-        <CardDescription>Latest news about your tracked companies</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {articles.length === 0 ? (
-          <p className="text-muted-foreground">No articles found yet.</p>
-        ) : (
-          <div className="space-y-4">
-            {articles.map((article) => (
-              <div key={article.id} className="border-b pb-4">
-                <h3 className="font-medium">
-                  <a href={article.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                    {article.title}
-                  </a>
-                </h3>
-                <div className="flex items-center justify-between mt-1">
-                  <p className="text-sm text-muted-foreground">
-                    {article.companies?.name} • {article.source}
-                  </p>
-                  {article.published_date && (
-                    <p className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(article.published_date), { addSuffix: true })}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
           </div>
-        )}
-      </CardContent>
-      <CardFooter>
-        <Button asChild variant="outline">
-          <Link href="/articles">View All Articles</Link>
-        </Button>
-      </CardFooter>
-    </Card>
-  )
-}
-
-function ArticlesSkeleton() {
-  return (
-    <Card>
-      <CardHeader>
-        <Skeleton className="h-8 w-1/3" />
-        <Skeleton className="h-4 w-1/2" />
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="border-b pb-4">
-              <Skeleton className="h-5 w-full mb-2" />
-              <div className="flex items-center justify-between">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-3 w-24" />
-              </div>
-            </div>
-          ))}
         </div>
-      </CardContent>
-      <CardFooter>
-        <Skeleton className="h-10 w-28" />
-      </CardFooter>
-    </Card>
-  )
-}
+      </section>
 
-export default function Dashboard() {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <Button variant="outline" size="sm" className="flex items-center gap-2">
-          <RefreshCw className="h-4 w-4" />
-          Refresh Data
-        </Button>
-      </div>
+      {/* Main Content */}
+      <section id="today-picks" className="py-12 container mx-auto px-4">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold mb-2 flex items-center">
+            <TrendingUp className="mr-2 h-6 w-6 text-emerald-600" />
+            Today's Consensus Picks
+          </h2>
+          <p className="text-gray-600">Updated daily with AI-researched consensus picks from top betting analysts</p>
+        </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <NewsSearchStatus />
-        <LatestSummary />
-      </div>
+        <Suspense fallback={<LoadingConsensus />}>
+          <ConsensusPicksDisplay />
+        </Suspense>
+      </section>
 
-      <Tabs defaultValue="companies">
-        <TabsList>
-          <TabsTrigger value="companies">Companies</TabsTrigger>
-          <TabsTrigger value="articles">Articles</TabsTrigger>
-        </TabsList>
-        <TabsContent value="companies" className="mt-4">
-          <TrackedCompanies />
-        </TabsContent>
-        <TabsContent value="articles" className="mt-4">
-          <RecentArticles />
-        </TabsContent>
-      </Tabs>
+      {/* How It Works */}
+      <section className="py-12 bg-gray-100">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold mb-8 text-center">How It Works</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                <span className="text-blue-800 font-bold text-xl">1</span>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">AI Research</h3>
+              <p className="text-gray-600">
+                Our AI agents scan multiple betting websites daily to collect expert picks and analysis.
+              </p>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                <span className="text-blue-800 font-bold text-xl">2</span>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Consensus Analysis</h3>
+              <p className="text-gray-600">
+                We identify picks that have strong agreement across multiple reputable sources.
+              </p>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                <span className="text-blue-800 font-bold text-xl">3</span>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Detailed Summaries</h3>
+              <p className="text-gray-600">
+                Each consensus pick includes rationale, confidence level, and links to original sources.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }
