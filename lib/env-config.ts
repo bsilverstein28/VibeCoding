@@ -5,12 +5,13 @@
 
 export const envConfig = {
   // Base URL for API calls
-  baseUrl: process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : process.env.NEXT_PUBLIC_SITE_URL ||
-      (process.env.NODE_ENV === "production"
-        ? "https://your-production-domain.com" // Replace with your actual domain
-        : "http://localhost:3000"),
+  baseUrl: process.env.NEXT_PUBLIC_SITE_URL
+    ? process.env.NEXT_PUBLIC_SITE_URL
+    : process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : process.env.NODE_ENV === "production"
+        ? "https://benbets.vercel.app" // Hardcoded production URL
+        : "http://localhost:3000",
 
   // Cron job configuration
   cronSecret: process.env.CRON_SECRET || "",

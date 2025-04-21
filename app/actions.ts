@@ -69,18 +69,18 @@ export async function triggerCronJobAction() {
  * Works in both development and production environments
  */
 function getBaseUrl() {
-  // Check for VERCEL_URL (production)
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`
-  }
-
-  // Check for custom domain in production
+  // Check for custom domain in production (highest priority)
   if (process.env.NEXT_PUBLIC_SITE_URL) {
     return process.env.NEXT_PUBLIC_SITE_URL
   }
 
-  // Default to localhost in development
+  // Check for VERCEL_URL (production on Vercel)
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`
+  }
+
+  // Default to hardcoded URL in production or localhost in development
   return process.env.NODE_ENV === "production"
-    ? "https://your-production-domain.com" // Replace with your actual domain if not using VERCEL_URL
+    ? "https://benbets.vercel.app" // Hardcoded production URL
     : "http://localhost:3000"
 }

@@ -6,6 +6,6 @@
     }
   ],
   "env": {
-    "NEXT_PUBLIC_SITE_URL": "${VERCEL_URL}"
+    "NEXT_PUBLIC_SITE_URL": "https://benbets.vercel.app"
   }
 }
