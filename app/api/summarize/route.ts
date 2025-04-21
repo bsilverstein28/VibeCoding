@@ -9,8 +9,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid picks data" }, { status: 400 })
     }
 
-    // Get the best available AI model
-    const model = getBestAvailableModel()
+    // Always use Perplexity Sonar Pro model
+    const model = getBestAvailableModel("perplexity")
 
     const prompt = `Summarize the following ${type} betting picks for NBA games:
     

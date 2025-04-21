@@ -25,11 +25,11 @@ export default async function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-gradient-to-r from-blue-900 to-indigo-800 text-white py-8">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-8">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-            <Button asChild variant="outline" className="text-white border-white hover:bg-white/10">
+            <Button asChild variant="outline" className="border-white hover:bg-emerald-600 text-white hover:text-white">
               <Link href="/">
                 <ArrowLeft className="mr-1 h-4 w-4" /> Back to Site
               </Link>
@@ -68,6 +68,11 @@ export default async function AdminPage() {
                               <span className="w-3 h-3 bg-green-500 rounded-full"></span>
                               <span className="font-medium">{model.name}</span>
                               <span className="text-sm text-gray-500">({model.provider})</span>
+                              {model.name === "Sonar Deep Research" && (
+                                <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                                  Default
+                                </span>
+                              )}
                             </li>
                           ))}
                         </ul>

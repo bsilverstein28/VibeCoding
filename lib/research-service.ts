@@ -190,8 +190,8 @@ function getFallbackConsensusData(date: string): ConsensusPicksResult {
  * @returns Promise with consensus picks
  */
 export async function researchPicksWithAI(date: string): Promise<ConsensusPicksResult> {
-  // Get the best available AI model
-  const model = getBestAvailableModel()
+  // Always use Perplexity Sonar Pro model
+  const model = getBestAvailableModel("perplexity")
   const modelName = model.toString()
 
   // Start timing

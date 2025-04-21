@@ -40,12 +40,8 @@ export async function triggerResearchAction(date: string) {
  */
 export async function triggerCronJobAction() {
   try {
-    // Use absolute URL with https for production environments
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NODE_ENV === "production"
-        ? "https://your-production-url.vercel.app" // Replace with your actual production URL
-        : "http://localhost:3000"
+    // Get the base URL safely
+    const baseUrl = getBaseUrl()
 
     const response = await fetch(`${baseUrl}/api/cron/daily-research`, {
       headers: {
@@ -66,4 +62,25 @@ export async function triggerCronJobAction() {
       error: error instanceof Error ? error.message : "Unknown error",
     }
   }
+}
+
+/**
+ * Helper function to get the base URL for API calls
+ * Works in both development and production environments
+ */
+function getBaseUrl() {
+  // Check for VERCEL_URL (production)
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`
+  }
+
+  // Check for custom domain in production
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL
+  }
+
+  // Default to localhost in development
+  return process.env.NODE_ENV === "production"
+    ? "https://your-production-domain.com" // Replace with your actual domain if not using VERCEL_URL
+    : "http://localhost:3000"
 }

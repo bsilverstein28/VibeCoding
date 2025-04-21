@@ -51,7 +51,11 @@ export default function TriggerResearch() {
         <DatePicker date={selectedDate} setDate={setSelectedDate} className="w-full" />
       </div>
 
-      <Button className="w-full" onClick={handleTriggerResearch} disabled={isResearching || !selectedDate}>
+      <Button
+        className="w-full bg-emerald-600 hover:bg-emerald-700"
+        onClick={handleTriggerResearch}
+        disabled={isResearching || !selectedDate}
+      >
         {isResearching ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

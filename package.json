@@ -58,11 +58,11 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.6",
     "zod": "^3.24.1",
+    "ai": "latest",
+    "@supabase/supabase-js": "latest",
     "@ai-sdk/openai": "latest",
     "@ai-sdk/deepinfra": "latest",
-    "@ai-sdk/google": "latest",
-    "ai": "latest",
-    "@supabase/supabase-js": "latest"
+    "@ai-sdk/google": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",

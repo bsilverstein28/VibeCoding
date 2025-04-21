@@ -10,14 +10,14 @@ export default async function HistoryPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-gradient-to-r from-blue-900 to-indigo-800 text-white py-8">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-8">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold flex items-center">
               <Calendar className="mr-2 h-6 w-6" />
               Historical Results
             </h1>
-            <Button asChild variant="outline" className="text-white border-white hover:bg-white/10">
+            <Button asChild variant="outline" className="border-white hover:bg-emerald-600 text-white hover:text-white">
               <Link href="/">
                 <ChevronLeft className="mr-1 h-4 w-4" /> Back to Today's Picks
               </Link>
@@ -149,7 +149,9 @@ function HistoricalPicksList({ picks, showViewMore = false }: { picks: any[]; sh
 
       {showViewMore && (
         <div className="mt-6 text-center">
-          <Button variant="outline">View More Results</Button>
+          <Button variant="outline" className="hover:bg-emerald-600 hover:text-white">
+            View More Results
+          </Button>
         </div>
       )}
     </div>

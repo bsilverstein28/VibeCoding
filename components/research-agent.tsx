@@ -15,6 +15,7 @@ import TriggerResearch from "./trigger-research"
 // Mock available models for client-side rendering
 // In a real implementation, you would fetch this from an API endpoint
 const AVAILABLE_MODELS = [
+  { name: "Perplexity Sonar Pro", provider: "Perplexity AI" },
   { name: "GPT-4o", provider: "OpenAI" },
   { name: "Gemini 1.5 Pro", provider: "Google" },
   { name: "DeepSeek R1", provider: "DeepInfra" },
@@ -25,7 +26,7 @@ export default function ResearchAgent() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
   const [customPrompt, setCustomPrompt] = useState("")
   const [researchResults, setResearchResults] = useState<string | null>(null)
-  const [selectedModel, setSelectedModel] = useState<string | null>(null)
+  const [selectedModel, setSelectedModel] = useState<string | null>("Perplexity Sonar Pro") // Default to Perplexity Sonar Pro
 
   const handleResearch = async (type = "custom") => {
     setIsResearching(true)
@@ -86,7 +87,7 @@ export default function ResearchAgent() {
     <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center">
-          <Bot className="mr-2 h-5 w-5 text-blue-600" />
+          <Bot className="mr-2 h-5 w-5 text-emerald-600" />
           Research Agent
         </CardTitle>
         <CardDescription>Use AI to research and analyze betting picks across multiple websites</CardDescription>
@@ -112,7 +113,11 @@ export default function ResearchAgent() {
                   <Badge
                     key={model.name}
                     variant={selectedModel === model.name ? "default" : "outline"}
-                    className="cursor-pointer"
+                    className={
+                      selectedModel === model.name
+                        ? "bg-emerald-600"
+                        : "hover:bg-emerald-600 hover:text-white cursor-pointer"
+                    }
                     onClick={() => setSelectedModel(model.name)}
                   >
                     {selectedModel === model.name && <Check className="mr-1 h-3 w-3" />}
@@ -125,7 +130,7 @@ export default function ResearchAgent() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Button
                 variant="outline"
-                className="w-full"
+                className="w-full hover:bg-emerald-600 hover:text-white"
                 onClick={() => handleResearch("spreads")}
                 disabled={isResearching}
               >
@@ -133,7 +138,7 @@ export default function ResearchAgent() {
               </Button>
               <Button
                 variant="outline"
-                className="w-full"
+                className="w-full hover:bg-emerald-600 hover:text-white"
                 onClick={() => handleResearch("totals")}
                 disabled={isResearching}
               >
@@ -141,7 +146,7 @@ export default function ResearchAgent() {
               </Button>
               <Button
                 variant="outline"
-                className="w-full"
+                className="w-full hover:bg-emerald-600 hover:text-white"
                 onClick={() => handleResearch("props")}
                 disabled={isResearching}
               >
@@ -163,7 +168,11 @@ export default function ResearchAgent() {
                   <Badge
                     key={model.name}
                     variant={selectedModel === model.name ? "default" : "outline"}
-                    className="cursor-pointer"
+                    className={
+                      selectedModel === model.name
+                        ? "bg-emerald-600"
+                        : "hover:bg-emerald-600 hover:text-white cursor-pointer"
+                    }
                     onClick={() => setSelectedModel(model.name)}
                   >
                     {selectedModel === model.name && <Check className="mr-1 h-3 w-3" />}
@@ -185,7 +194,11 @@ export default function ResearchAgent() {
               />
             </div>
 
-            <Button className="w-full" onClick={() => handleResearch()} disabled={isResearching}>
+            <Button
+              className="w-full bg-emerald-600 hover:bg-emerald-700"
+              onClick={() => handleResearch()}
+              disabled={isResearching}
+            >
               {isResearching ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -204,7 +217,7 @@ export default function ResearchAgent() {
 
         {isResearching && (
           <div className="mt-6 text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-emerald-600" />
             <p className="mt-2 text-sm text-gray-500">Researching betting picks across multiple websites...</p>
           </div>
         )}

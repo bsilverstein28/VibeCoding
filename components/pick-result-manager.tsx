@@ -49,7 +49,9 @@ export default function PickResultManager({ pickId, currentResult }: PickResultM
       <Button
         size="sm"
         variant={currentResult === "win" ? "default" : "outline"}
-        className={currentResult === "win" ? "bg-green-600 hover:bg-green-700" : ""}
+        className={
+          currentResult === "win" ? "bg-emerald-600 hover:bg-emerald-700" : "hover:bg-emerald-600 hover:text-white"
+        }
         onClick={() => updateResult("win")}
         disabled={isUpdating}
       >
@@ -60,7 +62,9 @@ export default function PickResultManager({ pickId, currentResult }: PickResultM
       <Button
         size="sm"
         variant={currentResult === "loss" ? "default" : "outline"}
-        className={currentResult === "loss" ? "bg-red-600 hover:bg-red-700" : ""}
+        className={
+          currentResult === "loss" ? "bg-emerald-600 hover:bg-emerald-700" : "hover:bg-emerald-600 hover:text-white"
+        }
         onClick={() => updateResult("loss")}
         disabled={isUpdating}
       >
@@ -71,7 +75,9 @@ export default function PickResultManager({ pickId, currentResult }: PickResultM
       <Button
         size="sm"
         variant={currentResult === "push" ? "default" : "outline"}
-        className={currentResult === "push" ? "bg-yellow-600 hover:bg-yellow-700" : ""}
+        className={
+          currentResult === "push" ? "bg-emerald-600 hover:bg-emerald-700" : "hover:bg-emerald-600 hover:text-white"
+        }
         onClick={() => updateResult("push")}
         disabled={isUpdating}
       >

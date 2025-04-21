@@ -4,14 +4,14 @@ import { BETTING_SITES } from "@/lib/research-service"
 
 export async function POST(req: NextRequest) {
   try {
-    const { type, date } = await req.json()
+    const { type, date, model } = await req.json()
 
     if (!type || !["spreads", "totals", "props", "all"].includes(type)) {
       return NextResponse.json({ error: "Invalid research type" }, { status: 400 })
     }
 
-    // Get the best available AI model
-    const model = getBestAvailableModel()
+    // Always use Perplexity Sonar Pro as the default model
+    const aiModel = getBestAvailableModel("perplexity")
 
     // Create a prompt based on the type of research needed
     let prompt = ""
@@ -152,7 +152,7 @@ export async function POST(req: NextRequest) {
     // This is how you would use the AI SDK to generate the research:
     /*
     const { text } = await generateText({
-      model,
+      model: aiModel,
       prompt,
       temperature: 0.2, // Lower temperature for more factual responses
     });

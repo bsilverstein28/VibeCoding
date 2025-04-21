@@ -19,10 +19,12 @@ export default function CronStatus() {
       if (result.success) {
         toast({
           title: "Cron job triggered successfully",
-          description: `Found ${result.data.pickCount.total} consensus picks for ${result.data.date}`,
+          description: result.data?.pickCount?.total
+            ? `Found ${result.data.pickCount.total} consensus picks for ${result.data.date}`
+            : "Job completed successfully",
         })
       } else {
-        throw new Error(result.error)
+        throw new Error(result.error || "Unknown error occurred")
       }
 
       setLastRun(new Date().toLocaleTimeString())
@@ -58,7 +60,13 @@ export default function CronStatus() {
               <h3 className="text-sm font-medium">Manual Trigger</h3>
               {lastRun && <p className="text-xs text-gray-500">Last triggered: {lastRun}</p>}
             </div>
-            <Button variant="outline" size="sm" onClick={triggerManualRun} disabled={isLoading}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={triggerManualRun}
+              disabled={isLoading}
+              className="hover:bg-emerald-600 hover:text-white"
+            >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

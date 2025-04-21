@@ -9,7 +9,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-900 to-indigo-800 text-white py-16">
+      <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">NBA Consensus Picks</h1>
@@ -22,12 +22,12 @@ export default function Home() {
                   Today's Picks <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-              <Button asChild size="lg" className="bg-amber-500 hover:bg-amber-600 text-white">
+              <Button asChild size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white">
                 <Link href="/history">
                   <Calendar className="mr-2 h-4 w-4" /> Historical Results
                 </Link>
               </Button>
-              <Button asChild size="lg" className="bg-sky-500 hover:bg-sky-600 text-white">
+              <Button asChild size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white">
                 <Link href="/admin">Admin Dashboard</Link>
               </Button>
             </div>
@@ -56,8 +56,8 @@ export default function Home() {
           <h2 className="text-3xl font-bold mb-8 text-center">How It Works</h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-white p-6 rounded-lg shadow-md">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                <span className="text-blue-800 font-bold text-xl">1</span>
+              <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
+                <span className="text-emerald-800 font-bold text-xl">1</span>
               </div>
               <h3 className="text-xl font-semibold mb-2">AI Research</h3>
               <p className="text-gray-600">
@@ -65,8 +65,8 @@ export default function Home() {
               </p>
             </div>
             <div className="bg-white p-6 rounded-lg shadow-md">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                <span className="text-blue-800 font-bold text-xl">2</span>
+              <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
+                <span className="text-emerald-800 font-bold text-xl">2</span>
               </div>
               <h3 className="text-xl font-semibold mb-2">Consensus Analysis</h3>
               <p className="text-gray-600">
@@ -74,8 +74,8 @@ export default function Home() {
               </p>
             </div>
             <div className="bg-white p-6 rounded-lg shadow-md">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                <span className="text-blue-800 font-bold text-xl">3</span>
+              <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
+                <span className="text-emerald-800 font-bold text-xl">3</span>
               </div>
               <h3 className="text-xl font-semibold mb-2">Detailed Summaries</h3>
               <p className="text-gray-600">
